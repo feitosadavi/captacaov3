@@ -1,0 +1,1 @@
+pub mod posts_getter_service;
