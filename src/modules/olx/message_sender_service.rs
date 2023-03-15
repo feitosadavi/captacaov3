@@ -1,5 +1,8 @@
 use std::{error::Error};
-use crate::core::{implementations::MessengerDispatcher, structs::Progress};
+use crate::core::{
+	implementations::MessengerDispatcher, 
+	structs::{Progress, Log}
+};
 
 
 fn convert_usize_to_i32 (usize: usize) -> i32 {
@@ -12,13 +15,18 @@ fn convert_usize_to_i32 (usize: usize) -> i32 {
 
 
 pub async fn start (links: Vec<String>) -> Result<(), Box<dyn Error>> {	
-	MessengerDispatcher::log("Enviando mensagem");
+	MessengerDispatcher::log(Log {
+		target: "olx".to_string(),
+		situation: "info".to_string(),
+		description: "Enviando mensagem".to_string()
+	});
 
 	let total: i32 = convert_usize_to_i32(links.len());
 	
-	for (i, _link) in links.iter().enumerate() {
-		let current = convert_usize_to_i32(i);
-		MessengerDispatcher::inform_progress(Progress {current, total})
+	let mut i = 1;
+	for _link in links {
+		MessengerDispatcher::inform_progress(Progress {target: "olx".to_owned(), current: i, total});
+		i += 1;
 	}
 
 

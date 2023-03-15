@@ -2,7 +2,7 @@ use std::{error::Error};
 
 use playwright::api::Page;
 
-use crate::{util::sanitizor::{Sanitizor, PageStats}, context, core::implementations::MessengerDispatcher};
+use crate::{util::sanitizor::{Sanitizor, PageStats}, context, core::{implementations::MessengerDispatcher, structs::{Log, Post}}};
 
 
 async fn get_number_of_pages(page: &Page) -> Result<PageStats, Box<dyn Error>>  {
@@ -35,7 +35,11 @@ async fn get_posts_from_current_page(page: &Page, url: &str) -> Result<Vec<Strin
 }
 
 pub async fn start (query: &str) -> Result<(), Box<dyn Error>> {	
-	MessengerDispatcher::log("Coletando dados");
+	MessengerDispatcher::log(Log {
+		target: "olx".to_string(),
+		situation: "info".to_string(),
+		description: "Coletando dados".to_string()
+	});
 	
 	let (context, _browser, _playwright) = context::Context::new().await?;
 
@@ -48,12 +52,17 @@ pub async fn start (query: &str) -> Result<(), Box<dyn Error>> {
 
 	let page_stats = get_number_of_pages(&page).await?;
 
+	let mut test: Vec<String> = vec![];
 	for i in 0..page_stats.pages_count {
 		let url = [query, "&o=", &(i+1).to_string()].join("");
 		let links = get_posts_from_current_page(&page, &url).await?;
-		MessengerDispatcher::post(links);
+		test.extend(links);
 	}
-
+	
+	MessengerDispatcher::post(Post {
+		target: "olx".to_owned(),
+		links: test
+	});
 	Ok(())
 }
 

@@ -7,15 +7,12 @@ use crate::{
 };
 
 use super::{
-	structs::{TargetMethod, Progress}, 
+	structs::{TargetMethod, Progress, Log, Post}, 
 	events::{POST, PROGRESS}
 };
 
 impl TargetMethod {
 	pub async fn get_posts(&self, query: &str) -> Result<(), Box<dyn Error>> {
-		
-		
-
 		match self.name {
 			"olx" => olx::posts_getter_service::start(query).await,
 			_ => panic!("Unsupported target method: {}", self.name)
@@ -32,10 +29,10 @@ impl TargetMethod {
 
 pub struct MessengerDispatcher {} 
 impl MessengerDispatcher {
-	pub fn log(value: &str) {
+	pub fn log(value: Log) {
 		EVENT_EMITTER.lock().unwrap().emit(LOG, value);
 	}
-	pub fn post(value: Vec<String>) {
+	pub fn post(value: Post) {
 		EVENT_EMITTER.lock().unwrap().emit(POST, value);
 	}
 	pub fn inform_progress(value: Progress) {
