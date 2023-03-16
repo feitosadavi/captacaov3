@@ -52,17 +52,15 @@ pub async fn start (query: &str) -> Result<(), Box<dyn Error>> {
 
 	let page_stats = get_number_of_pages(&page).await?;
 
-	let mut test: Vec<String> = vec![];
 	for i in 0..page_stats.pages_count {
 		let url = [query, "&o=", &(i+1).to_string()].join("");
 		let links = get_posts_from_current_page(&page, &url).await?;
-		test.extend(links);
+		MessengerDispatcher::post(Post {
+			target: "olx".to_owned(),
+			links
+		});
 	}
 	
-	MessengerDispatcher::post(Post {
-		target: "olx".to_owned(),
-		links: test
-	});
 	Ok(())
 }
 

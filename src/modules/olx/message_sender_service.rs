@@ -28,8 +28,6 @@ pub async fn start (links: Vec<String>) -> Result<(), Box<dyn Error>> {
 		MessengerDispatcher::inform_progress(Progress {target: "olx".to_owned(), current: i, total});
 		i += 1;
 	}
-
-
 	// let (context, _browser, _playwright) = context::Context::new().await?;
 
 	// let page = context.new_page().await?;
@@ -38,7 +36,5 @@ pub async fn start (links: Vec<String>) -> Result<(), Box<dyn Error>> {
 	// 	.goto_builder(query)
 	// 	.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
 	// 	.goto().await?;
-
-
 	Ok(())
 }
