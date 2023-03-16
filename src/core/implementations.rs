@@ -25,6 +25,13 @@ impl TargetMethod {
 			_ => panic!("Unsupported target method: {}", self.name)
 		}
 	}
+
+	pub async fn authenticate(&self) -> Result<(), Box<dyn Error>> {
+		match self.name {
+			"olx" => olx::authentication_service::start().await,
+			_ => panic!("Unsupported target method: {}", self.name)
+		}
+	}
 }
 
 pub struct MessengerDispatcher {} 
