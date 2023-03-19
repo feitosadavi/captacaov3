@@ -1,8 +1,10 @@
-use std::{error::Error, path::Path, thread, time};
+use core::time;
+use std::{error::Error, path::Path, thread};
 
-use playwright::api::BrowserContext;
+use playwright::api::{BrowserContext};
 
 use crate::{core::{implementations::MessengerDispatcher, structs::Log}, context::{self}};
+
 
 async fn save_storage_state (context:BrowserContext) {
 	let storage_state = context.storage_state().await.unwrap();
@@ -15,7 +17,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 	MessengerDispatcher::log(Log {
 		target: "olx".to_string(),
 		situation: "info".to_string(),
-		description: "Coletando dados".to_string()
+		description: "Fazendo login".to_string()
 	});
 	
 	let (context, _browser, _playwright) = context::Context::new().await?;
@@ -27,8 +29,8 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 		.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
 		.goto().await?;
 
-	page.type_builer("input[type='email']", "davifeitosa.trab@gmail.com").delay(0.0).no_wait_after(true).timeout(2000.0).r#type().await?;
-	page.type_builer("input[type='password']", "40028922dD$").delay(0.0).no_wait_after(true).timeout(2000.0).r#type().await?;
+	page.type_builer("input[type='email']", "captacao.auto@gmail.com").delay(0.0).no_wait_after(true).timeout(2000.0).r#type().await?;
+	page.type_builer("input[type='password']", "CP204060").delay(0.0).no_wait_after(true).timeout(2000.0).r#type().await?;
 
 	let entrar_btn = &page.query_selector_all("text=Entrar").await?[3];
 	entrar_btn.click_builder().click().await?;

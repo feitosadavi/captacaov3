@@ -21,14 +21,17 @@ impl TargetMethod {
 
 	pub async fn send_message(&self, links: Vec<String>) -> Result<(), Box<dyn Error>> {
 		match self.name {
-			"olx" => olx::message_sender_service::start(links).await,
+			"olx" => {
+				let mut message_sender = olx::message_sender_service::MessengerService { link: "".to_string() };
+				message_sender.start(links).await
+			},
 			_ => panic!("Unsupported target method: {}", self.name)
 		}
 	}
 
 	pub async fn authenticate(&self) -> Result<(), Box<dyn Error>> {
 		match self.name {
-			"olx" => olx::authentication_service::start().await,
+			"olx" => Ok(olx::authentication_service::start().await?),
 			_ => panic!("Unsupported target method: {}", self.name)
 		}
 	}

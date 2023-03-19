@@ -7,12 +7,13 @@ pub mod core;
 pub mod global_event_emitter;
 
 use global_event_emitter::EVENT_EMITTER;
+use tokio::runtime::Runtime;
 
 use self::core::{
-	implementations::MessengerDispatcher,
-	structs::{TargetMethod, Log},
-	events::{LOG},
-	targets::TARGETS
+	structs::{TargetMethod, Log, Progress, Post},
+	events::{LOG, PROGRESS, POST},
+	targets::TARGETS,
+	implementations::MessengerDispatcher
 };
 use self::util::asyncthread;
 
@@ -56,19 +57,23 @@ async fn start_authentication(target: &str) {
 				target: target_clone.to_string(), 
 				situation: "error".to_string(), 
 				description: "Já está autenticado".to_string() }),
-    	Ok(_) => todo!(),
+    	Ok(_) => println!("OK"),
 		}
 	}).join().expect("Error on start authentication");
 }
 
 #[tokio::main]
 async fn main() {
+	EVENT_EMITTER.lock().unwrap().on(LOG, |log: Log| println!("{:?}", log));
+	// start_authentication("olx").await;
+	let link = String::from("https://pr.olx.com.br/regiao-de-curitiba-e-paranagua/autos-e-pecas/carros-vans-e-utilitarios/fusca-tsi-2013-baixa-km-1156487976?rec=a&lis=galeria_adview_relacionados_2020");
+	let links = vec![link.to_owned(),link.to_owned(),link.to_owned(),link.to_owned()];
+
+	start_messenger_bot(links, "olx").await;
 	// let query = "https://www.olx.com.br/autos-e-pecas/carros-vans-e-utilitarios/porsche/boxster?q=s";
 	// let selected_targets = ["olx"];
 	
 	// EVENT_EMITTER.lock().unwrap().on(PROGRESS, |progress: Progress| println!("{:?}", progress));
-	EVENT_EMITTER.lock().unwrap().on(LOG, |log: Log| println!("{:?}", log));
-	start_authentication("olx").await;
 
 	// EVENT_EMITTER.lock().unwrap().on(POST, move |post: Post| {
 	// 	Runtime::new().unwrap().block_on(async move {
