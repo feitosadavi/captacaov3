@@ -2,7 +2,7 @@ use std::{error::Error};
 
 use playwright::api::Page;
 
-use crate::{util::sanitizor::{Sanitizor, PageStats}, context, core::{implementations::MessengerDispatcher, structs::{Log, Post}}};
+use crate::{util::sanitizor::{Sanitizor, PageStats}, context, core::{implementations::MessengerDispatcher, structs::{Log, Post}, situtations::INFO}};
 
 
 async fn get_number_of_pages(page: &Page) -> Result<PageStats, Box<dyn Error>>  {
@@ -37,8 +37,9 @@ async fn get_posts_from_current_page(page: &Page, url: &str) -> Result<Vec<Strin
 pub async fn start (query: &str) -> Result<(), Box<dyn Error>> {	
 	MessengerDispatcher::log(Log {
 		target: "olx".to_string(),
-		situation: "info".to_string(),
-		description: "Coletando dados".to_string()
+		situation: INFO.to_string(),
+		description: "Coletando dados".to_string(),
+		link: "".to_string()
 	});
 	
 	let (context, _browser, _playwright) = context::Context::new().await?;

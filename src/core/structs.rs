@@ -17,6 +17,7 @@ pub struct Progress {
 pub struct Log {
 	pub target: String,
 	pub situation: String,
+	pub link: String,
 	pub description: String
 }
 
@@ -25,6 +26,24 @@ pub struct Log {
 pub struct Post {
 	pub target: String,
 	pub links: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct Error {
+	pub target: String,
+	pub link: String,
+	pub description: String
+}
+
+#[derive(Debug)]
+pub struct Success {
+	pub target: String,
+	pub link: String,
+}
+
+pub struct Report {
+	pub errors: Vec<Error>,
+	pub success: Vec<Success>,
 }
 
 pub struct MessengerDispatcherArgs{}

@@ -2,17 +2,28 @@ use std::{error::Error, path::Path};
 
 use playwright::{Playwright, api::{BrowserContext, Browser, StorageState, Viewport}};
 
+use crate::constants::STORAGE_PATH;
+
 
 pub struct Context {}
 
 impl Context {
+	pub async fn save_storage_state (context:BrowserContext) {
+		let storage_state = context.storage_state().await.unwrap();
+		let storage_state_json = serde_json::to_string(&storage_state).unwrap();
+		let storage_file_path = Path::new(STORAGE_PATH);
+		
+		std::fs::write(storage_file_path, storage_state_json).unwrap(); // grava as alterações de estado no arquivo padrao
+	}
+
 	fn load_storage_state () -> StorageState {
 		// Load the storage state from file
-		let storage_file_path = Path::new("./storage-state.json");
+		let storage_file_path = Path::new(STORAGE_PATH);
 		let storage_state: Option<StorageState> = match std::fs::read_to_string(storage_file_path) {
 			Ok(content) => {
 				return serde_json::from_str(&content).unwrap();
 			},
+			// se der erro é pq está vazio, então volta um documento 'vazio'
 			Err(_) => Some(StorageState {cookies: None, origins: None})
 		};
 		return storage_state.unwrap();
@@ -24,12 +35,11 @@ impl Context {
 		let playwright = Playwright::initialize().await?;
 		playwright.prepare()?; // Install browsers
 
-		let chromium = playwright.chromium();
+		let browser_driver = playwright.firefox();
 
-		let browser = chromium.launcher().headless(false).launch().await?;
+		let browser = browser_driver.launcher().headless(false).launch().await?;
 
 		let storage_state = Self::load_storage_state();
-		// println!("{:?}", storage_state);
 		let context = browser.context_builder().viewport(Some(Viewport {width: 500, height: 600})).storage_state(storage_state).build().await?;
 
 		Ok((context, browser, playwright))
