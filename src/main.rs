@@ -21,16 +21,7 @@ use self::core::{
 };
 use self::util::asyncthread;
 
-use slint::slint;
-
-slint::slint!{
-	export component HelloWorld {
-			Text {
-					text: "hello world";
-					color: green;
-			}
-	}
-}
+// use teloxide::{prelude::*, utils::command::BotCommands};
 
 async fn start_posts_getter_bot(query: &str, target: &str) {
 	let target_clone = target.to_owned();
@@ -79,8 +70,16 @@ async fn start_authentication(target: &str) {
 	}).join().expect("Error on start authentication");
 }
 
+// extern crate pretty_env_logger;
+// #[macro_use] extern crate log;
+
+use pretty_env_logger;
+use log;
+
 #[tokio::main]
 async fn main() {
+	std::env::set_var("TELOXIDE_TOKEN", "6511336966:AAFPx-_Uvzy4WxFfaCgk4ZNmdywdY7rXYKg");
+
 	// let mut report = Report {
 	// 		success: vec![],
 	// 		errors: vec![]
@@ -119,7 +118,14 @@ async fn main() {
 		// 	}
     // });
 	// HelloWorld::new().unwrap().run().unwrap();
-	start_authentication("olx").await;
+	
+	pretty_env_logger::init();
+	log::info!("Starting throw dice bot...");
+
+	let bot = Bot::from_env();
+
+	Command::repl(bot, answer).await;
+	
 	// let link = String::from("https://pr.olx.com.br/regiao-de-curitiba-e-paranagua/autos-e-pecas/carros-vans-e-utilitarios/fusca-tsi-2013-baixa-km-1156487976?rec=a&lis=galeria_adview_relacionados_2020");
 	// let links = vec![link.to_owned(),link.to_owned()];
 
@@ -139,4 +145,34 @@ async fn main() {
 	// for selected_target in selected_targets {
 	// 	start_posts_getter_bot(query, selected_target).await;
 	// }
+}
+
+use teloxide::{prelude::*, utils::command::BotCommands};
+
+#[derive(BotCommands, Clone)]
+#[command(rename_rule = "lowercase", description = "Estes são os comandos suportados:")]
+enum Command {
+    #[command(description = "mostra este texto.")]
+    Ajuda,
+    #[command(description = "realiza o login na Olx.")]
+    Login(String),
+    #[command(description = "handle a username and an age.", parse_with = "split")]
+    UsernameAndAge { username: String, age: u8 },
+}
+
+async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+	match cmd {
+		Command::Ajuda => bot.send_message(msg.chat.id, Command::descriptions().to_string()).await?,
+		Command::Login(username) => {
+			bot.send_message(msg.chat.id, "Prossiga com o Login no navegador que apareceu na tela do seu computador.").await?;
+			start_authentication("olx").await;	
+			bot.send_message(msg.chat.id, "Login realizado com sucesso!.").await?
+		}
+		Command::UsernameAndAge { username, age } => {
+			bot.send_message(msg.chat.id, format!("Your username is @{username} and age is {age}."))
+				.await?
+		}
+	};
+
+	Ok(())
 }

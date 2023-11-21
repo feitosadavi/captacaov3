@@ -9,8 +9,11 @@ edition = "2021"
 event-emitter-rs = "0.1.4"
 futures = "0.3.26"
 lazy_static = "1.4.0"
+log = "0.4.20"
 playwright = "0.0.20"
-serde = "1.0.156"
+pretty_env_logger = "0.5.0"
+serde = { version = "1.0.156", features = ["derive"] }
 serde_json = "1.0.94"
 slint = "1.1.1"
+teloxide = { version = "0.12.2", features = ["macros"] }
 tokio = "1.25.0"
