@@ -23,7 +23,6 @@ impl Sanitizor {
 
 		let pages_count = (posts_count/itens_per_page_parsed).ceil() as i32; 
 
-		
 		let int_posts_count: i32 = posts_count as i32; 
 		
 		return Ok(PageStats {pages_count, posts_count: int_posts_count});

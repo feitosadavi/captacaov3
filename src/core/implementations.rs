@@ -1,5 +1,7 @@
 use std::error::Error;
 
+use teloxide::Bot;
+
 use crate::{
 	modules::olx, 
 	core::events::{LOG}, 
@@ -7,17 +9,17 @@ use crate::{
 };
 
 use super::{
-	structs::{TargetMethod, Progress, Log, Post}, 
-	events::{POST, PROGRESS}
+	structs::{TargetMethod, Progress, Log, Post, TelegramComunication}, 
+	events::{POST, PROGRESS, TELEGRAM_COMUNICATION}
 };
 
 impl TargetMethod {
-	pub async fn get_posts(&self, query: &str) -> Result<(), Box<dyn Error>> {
-		match self.name {
-			"olx" => olx::posts_getter_service::start(query).await,
-			_ => panic!("Unsupported target method: {}", self.name)
-		}
-	}
+	// pub async fn get_posts(&self, query: &str) -> Result<(), Box<dyn Error>> {
+	// 	match self.name {
+	// 		"olx" => olx::posts_getter_service::start(query).await,
+	// 		_ => panic!("Unsupported target method: {}", self.name)
+	// 	}
+	// }
 
 	pub async fn send_message(&self, links: Vec<String>) -> Result<(), Box<dyn Error>> {
 		match self.name {
@@ -47,5 +49,8 @@ impl MessengerDispatcher {
 	}
 	pub fn inform_progress(value: Progress) {
 		EVENT_EMITTER.lock().unwrap().emit(PROGRESS, value);
+	}
+	pub fn telegram_comunication(value: TelegramComunication) {
+		EVENT_EMITTER.lock().unwrap().emit(TELEGRAM_COMUNICATION, value);
 	}
 }

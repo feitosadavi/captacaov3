@@ -46,5 +46,13 @@ pub struct Report {
 	pub success: Vec<Success>,
 }
 
+
+#[derive(Serialize, Deserialize)]
+#[derive(Debug)]
+pub struct TelegramComunication {
+	pub context: String,
+	pub msg: String,
+}
+
 pub struct MessengerDispatcherArgs{}
 

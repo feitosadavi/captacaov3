@@ -1,6 +1,6 @@
 use std::{error::Error, path::Path};
 
-use playwright::{Playwright, api::{BrowserContext, Browser, StorageState, Viewport}};
+use playwright::{Playwright, api::{BrowserContext, Browser, StorageState, Viewport, BrowserType}};
 
 use crate::constants::STORAGE_PATH;
 
@@ -29,19 +29,31 @@ impl Context {
 		return storage_state.unwrap();
 	}
 
+	fn get_browser_name(browser_name: BrowserName, playwright: &Playwright) -> BrowserType {
+		match browser_name {
+			BrowserName::Chrome => playwright.chromium(),
+			BrowserName::Firefox => playwright.firefox()
+		}
+	}
+
 	// #[tokio::main]
-	pub async fn new() -> Result<(BrowserContext, Browser, Playwright), Box<dyn Error>> {
+	pub async fn new(browser_name: BrowserName) -> Result<(BrowserContext, Browser, Playwright), Box<dyn Error>> {
 		println!("Criando contexto..");
 		let playwright = Playwright::initialize().await?;
 		playwright.prepare()?; // Install browsers
 
-		let browser_driver = playwright.firefox();
+		let browser_name = Self::get_browser_name(browser_name, &playwright);
 
-		let browser = browser_driver.launcher().headless(false).launch().await?;
+		let browser = browser_name.launcher().headless(false).launch().await?;
 
 		let storage_state = Self::load_storage_state();
-		let context = browser.context_builder().viewport(Some(Viewport {width: 500, height: 600})).storage_state(storage_state).build().await?;
+		let context = browser.context_builder().viewport(Some(Viewport {width: 600, height: 600})).storage_state(storage_state).build().await?;
 
 		Ok((context, browser, playwright))
 	}
+}
+
+pub enum BrowserName {
+	Firefox,
+	Chrome
 }
