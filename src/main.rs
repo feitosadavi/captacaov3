@@ -7,18 +7,16 @@ pub mod core;
 pub mod global_event_emitter;
 pub mod constants;
 
-use std::{env, thread};
+use std::env;
 
 use constants::CHAT_ID_ENV;
 use global_event_emitter::EVENT_EMITTER;
 use modules::olx::posts_getter_service;
 use tokio::runtime::Runtime;
 
-use crate::modules::olx::{self, message_sender_service};
-
 use self::core::{
 	structs::{TargetMethod, Log, Post},
-	events::{LOG, PROGRESS, POST},
+	events::{LOG, POST},
 	targets::TARGETS,
 	implementations::MessengerDispatcher,
 	situtations::{ERROR, SUCCESS}
@@ -74,23 +72,15 @@ async fn start_authentication(target: &str) {
 
 #[tokio::main]
 async fn main() {
-	// thread::spawn(|| {
-		println!("THREAD");
-		EVENT_EMITTER.lock().unwrap().on(POST, move |post: Post| {
-			println!("POST EVENT");
-			EVENT_EMITTER.lock().unwrap().emit("SEND_MSG", post);
-		});
-	// });
-	println!("THREAD MENSAGEM");
-	
-	EVENT_EMITTER.lock().unwrap().on("SEND_MSG", move |post: Post| {
+	println!("THREAD POST");
+	EVENT_EMITTER.lock().unwrap().on(POST, move |post: Post| {
 		println!("{:?}", post);
 		Runtime::new().unwrap().block_on(async move {
 			start_messenger_bot(post.links, post.target.as_str()).await;
 		});
 	});
 	println!("THREAD LOG");
-  EVENT_EMITTER.lock().unwrap().on("LOG", move |log: Log| {
+  EVENT_EMITTER.lock().unwrap().on(LOG, move |log: Log| {
 		println!("{:?}", log);
 		Runtime::new().unwrap().block_on(async move {
 			match log.situation.as_str() {
@@ -100,15 +90,19 @@ async fn main() {
 						Err(err) => panic!("{}", err)
 					};
 					let envbot: Bot = Bot::from_env();
-					envbot.send_message(chat_id.clone(), format!("Enviado para: {}", log.link)).await;
+					let _  = envbot.send_message(chat_id.clone(), log.link).await;
 				},
 				_ => println!(""),
 			}		
 		});
 	});
 
-	// EVENT_EMITTER.lock().unwrap().emit("SEND_MSG", Post {links: 
-		// ["https://df.olx.com.br/distrito-federal-e-regiao/autos-e-pecas/carros-vans-e-utilitarios/tesla-model-s-plaid-eletrico-1246870935?lis=listing_no_category".to_string()].to_vec(), target: "olx".to_string()});
+	EVENT_EMITTER.lock().unwrap().emit(LOG, Log {
+		situation: SUCCESS.to_string(), 
+		target: "olx".to_string(), 
+		description: "".to_string(),
+		link: "MICROSOFT.COM".to_string()
+	});
 		env::set_var("RUST_BACKTRACE", "full");
 	std::env::set_var("TELOXIDE_TOKEN", "6511336966:AAFPx-_Uvzy4WxFfaCgk4ZNmdywdY7rXYKg");
 	let bot = Bot::from_env();
@@ -140,20 +134,11 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 			bot.send_message(msg.chat.id, "Login realizado com sucesso!.").await?
 		}
 		Command::EnviarMensagem(_search) => {
-			// env::set_var(CHAT_ID_ENV, msg.chat.id.to_string());
+			env::set_var(CHAT_ID_ENV, msg.chat.id.to_string());
 			bot.send_message(msg.chat.id, "Coletando os dados.").await?;
-			let links = match posts_getter_service::get_posts_links(&_search).await {
-				Ok(links) => links,
-				Err(_err) => panic!("")
-			};
+			let _ = posts_getter_service::get_posts_links(&_search).await;
 			println!("Terminou");
-			// let mut message_sender = olx::message_sender_service::MessengerService { link: "".to_string() };
-			// let res= match message_sender.start(links).await {
-			// 	Ok(r) => r,
-			// 	Err(e) => panic!("Erro ao enviar as mensagens")
-			// };
-			bot.send_message(msg.chat.id, format!("Processo finalizado, 1 enviados")).await?
-			// bot.send_message(msg.chat.id, format!("Processo finalizado, {} enviados", res)).await?
+			bot.send_message(msg.chat.id, format!("Acompanhe o envio das mensagens em https://conta.olx.com.br/chats")).await?
 		}
 	};
 

@@ -3,7 +3,7 @@ use std::{error::Error, thread, time::Duration};
 use playwright::api::Page;
 
 use crate::{
-	constants::{OLX_SEARCH_URL}, context::{self, BrowserName}, util::sanitizor::{PageStats, Sanitizor} 
+	constants::OLX_SEARCH_URL, context::{self, BrowserName}, core::{implementations::MessengerDispatcher, situtations::SUCCESS, structs::{Log, Post}}, util::sanitizor::{PageStats, Sanitizor} 
 };
 
 async fn get_number_of_pages(page: &Page) -> Result<PageStats, Box<dyn Error>>  {
@@ -104,12 +104,26 @@ pub async fn get_posts_links(query: &str) -> Result<Vec<String>, Box<dyn Error>>
 	println!("{:?}", page_stats);
 	page.close(Some(false)).await?;
 
-	let mut total_links: Vec<String> = get_posts_from_current_page(&url).await?;
+	MessengerDispatcher::log(Log {
+		situation: SUCCESS.to_string(), 
+		target: "olx".to_string(), 
+		description: "".to_string(),
+		link: format!("Iniciando envio para {} anúncios. Acompanhe o resultado no chat da olx", page_stats.posts_count)
+	});
 
+	let mut total_links: Vec<String> = get_posts_from_current_page(&url).await?;
+	MessengerDispatcher::post(Post {
+		links: total_links.clone(),
+		target: "olx".to_string()
+	});
 	for i in 1..page_stats.pages_count {
 		let url = [&url, "&o=", &(i+1).to_string()].join("");
 		let links = get_posts_from_current_page(&url).await?;
 		total_links = [&total_links[..], &links[..]].concat();
+		MessengerDispatcher::post(Post {
+			links,
+			target: "olx".to_string()
+		});
 	}
 	println!("Total links: {:?}", total_links.len());
 	Ok(total_links)

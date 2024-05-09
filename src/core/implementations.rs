@@ -1,16 +1,12 @@
 use std::error::Error;
 
-use teloxide::Bot;
-
 use crate::{
 	modules::olx, 
-	core::events::{LOG}, 
 	global_event_emitter::EVENT_EMITTER
 };
 
 use super::{
-	structs::{TargetMethod, Progress, Log, Post, TelegramComunication}, 
-	events::{POST, PROGRESS, TELEGRAM_COMUNICATION}
+	events::{LOG, POST, PROGRESS, TELEGRAM_COMUNICATION}, structs::{Log, Post, Progress, TargetMethod, TelegramComunication}
 };
 
 impl TargetMethod {

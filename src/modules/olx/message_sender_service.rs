@@ -1,11 +1,10 @@
-use std::{env, error::Error, path, thread, time::Duration};
+use std::{error::Error, thread, time::Duration};
 
-use playwright::api::{Page, BrowserContext};
-use teloxide::{requests::Requester, Bot};
+use playwright::api::Page;
 
 use crate::{
-	constants::CHAT_ID_ENV, context::{self, BrowserName}, core::{
-		implementations::MessengerDispatcher, situtations::{ERROR, FINISHED, SUCCESS}, structs::Log
+	context::{self, BrowserName}, core::{
+		implementations::MessengerDispatcher, situtations::{ERROR, SUCCESS}, structs::Log
 	}
 };
 
@@ -67,13 +66,12 @@ impl MessengerService {
 	pub async fn start(&mut self, links: Vec<String>) -> Result<i32, Box<dyn Error>>{
 		println!("[olx/message_sender_service]: Start Sending Messages");
 		
-		let (context, browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
+		let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
 
 		context.add_init_script("disable_css_and_image.js").await?;
 
 		let page = context.new_page().await?;
 		
-		let mut i = 0;
 		for link in links {
 			self.link = link;
 
@@ -81,43 +79,18 @@ impl MessengerService {
 				.goto_builder(self.link.as_str())
 				.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
 				.goto().await?;
-	
-			// if i == 1 {
-			// 	self.click_cookies_button(page.to_owned()).await?;
-			// }
-			
-			// if i != 1 {
 				self.click_chat_btn(page.to_owned()).await?;
-				// if !self.has_sent_previous_messages(page.to_owned()).await? {
-					self.type_message(page.to_owned()).await?;
-					// self.click_send_btn(page.to_owned()).await?;
-					// let chat_id = match env::var(CHAT_ID_ENV)  {
-					// 	Ok(id) => id,
-					// 	Err(err) => panic!("{}", err)
-					// };
-					// let envbot: Bot = Bot::from_env();
-					// envbot.send_message(chat_id.clone(), format!("Enviado para: {}", self.link.to_string())).await?;
+				self.type_message(page.to_owned()).await?;
 
-					// println!("lOGGING");
-					// MessengerDispatcher::log(Log {
-					// 	situation: SUCCESS.to_string(), 
-					// 	target: "olx".to_string(), 
-					// 	description: "".to_string(),
-					// 	link: self.link.to_string()
-					// })
-				// }
-			// }
-	
-			i += 1;
+				println!("LOG");
+				MessengerDispatcher::log(Log {
+					situation: SUCCESS.to_string(), 
+					target: "olx".to_string(), 
+					description: "".to_string(),
+					link: format!("Enviado para: {}", self.link)
+				});	
 		}
-
-		// let chat_id = match env::var(CHAT_ID_ENV)  {
-		// 	Ok(id) => id,
-		// 	Err(err) => panic!("{}", err)
-		// };
-		// let envbot: Bot = Bot::from_env();
-		// envbot.send_message(chat_id.clone(), format!("Enviado para {} anúncios", i)).await?;
-		Ok(i)
+		Ok(10)
 	}
 	
 }
