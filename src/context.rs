@@ -47,7 +47,7 @@ impl Context {
 		let browser = browser_name.launcher().headless(false).launch().await?;
 
 		let storage_state = Self::load_storage_state();
-		let context = browser.context_builder().viewport(Some(Viewport {width: 600, height: 600})).storage_state(storage_state).build().await?;
+		let context = browser.context_builder().viewport(Some(Viewport {width: 1400, height: 600})).storage_state(storage_state).build().await?;
 
 		Ok((context, browser, playwright))
 	}

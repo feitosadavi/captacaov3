@@ -1,15 +1,9 @@
-use std::{error::Error, env};
+use std::{error::Error, thread, time::Duration};
 
 use playwright::api::Page;
-use teloxide::{Bot, requests::Requester, prelude::{Dispatcher, Dialogue}, types::{Update, Message}, dispatching::{dialogue::InMemStorage, UpdateFilterExt}};
 
 use crate::{
-	util::sanitizor::{Sanitizor, PageStats}, 
-	context::{self, BrowserName}, 
-	core::{implementations::MessengerDispatcher, 
-	structs::{Log, Post, TelegramComunication}, 
-	situtations::INFO, events::TELEGRAM_COMUNICATION}, 
-	constants::{self, CHAT_ID_ENV}, global_event_emitter::EVENT_EMITTER
+	constants::{OLX_SEARCH_URL}, context::{self, BrowserName}, util::sanitizor::{PageStats, Sanitizor} 
 };
 
 async fn get_number_of_pages(page: &Page) -> Result<PageStats, Box<dyn Error>>  {
@@ -29,25 +23,75 @@ async fn get_number_of_pages(page: &Page) -> Result<PageStats, Box<dyn Error>>  
 	return Ok(page_stats);
 }
 
-async fn get_posts_from_current_page(page: &Page, url: &str) -> Result<Vec<String>, Box<dyn Error>>  {
-	page
-		.goto_builder(url)
-		.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
-		.goto().await?;
+async fn scroll_to_bottom_smoothly(page: &Page) -> Result<(), Box<dyn std::error::Error>> {
+	loop {
+			// Scroll down by a small amount
+			page.eval("window.scrollBy(0, 3000)").await?;
 
-	let anchor_elements = page.query_selector_all("a.olx-ad-card__link-wrapper").await?;
+			// Wait for a moment to let the content load and the scroll to take effect
+			thread::sleep(Duration::from_millis(200));
+			// Check if we've reached the bottom of the page
+			let is_bottom: bool = page.eval::<bool>(r#"
+					() => {
+							const scrollTop = window.scrollY || window.pageYOffset;
+							const scrollHeight = document.documentElement.scrollHeight;
+							return scrollTop + window.innerHeight >= scrollHeight;
+					}
+			"#).await?;
+
+			if is_bottom {
+					break;
+			}
+	}
+
+	Ok(())
+}
+
+
+async fn click_grade_view(page: &Page) -> Result<Option<()>, Box<dyn std::error::Error>> {
+	// Encontre o elemento com o atributo aria-label igual a "Ativar visualização em grade"
+	let selector = "[aria-label=\"Ativar visualização em grade\"]";
+	let element = page.query_selector(selector).await?;
+	
+	match element {
+			Some(element) => {
+					element.click_builder().click().await?;
+					Ok(Some(()))
+			}
+			None => {
+					println!("Visualização em grade não encontrada.");
+					Ok(None)
+			}
+	}
+}
+
+async fn get_posts_from_current_page(url: &str) -> Result<Vec<String>, Box<dyn Error>>  {
+	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
+	let page = context.new_page().await?;
+	page.goto_builder(&url).goto().await?;
+
+	click_grade_view(&page).await?;
+	scroll_to_bottom_smoothly(&page).await?;
+
+	let anchor_elements = page.query_selector_all("section.olx-ad-card.olx-ad-card--vertical:not(.rec-gallery-adcard)>a").await?;
 
 	let mut posts_links: Vec<String> = vec![];
 	for element in &anchor_elements {
-		let Some(href) = element.get_attribute("href").await? else {panic!("Error on getting attr")};
+		let href = match element.get_attribute("href").await? {
+			Some(value) => value,
+			None => {
+					panic!("Error: href attribute not found");
+			}
+		};		
 		posts_links.push(href);
 	}
-	
+
 	Ok(posts_links)
 }
 
-pub async fn get_posts_links(query: &str, pages_count: i32, max_posts: usize) -> Result<Vec<String>, Box<dyn Error>> {
-	let url = constants::OLX_SEARCH_URL.to_owned()+query;
+pub async fn get_posts_links(query: &str) -> Result<Vec<String>, Box<dyn Error>> {
+	let url = OLX_SEARCH_URL.to_owned()+query;
+
 	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
 	let page = context.new_page().await?;
 	page
@@ -55,45 +99,18 @@ pub async fn get_posts_links(query: &str, pages_count: i32, max_posts: usize) ->
 		.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
 		.goto().await?;
 
-	let mut total_links: Vec<String> = [].to_vec();
-	let mut how_much_left = max_posts;
-	for i in 0..pages_count {
-		let url = [&url, "&o=", &(i+1).to_string()].join("");
-		println!("{:?}", url);
-		let links = get_posts_from_current_page(&page, &url).await?;
-		for link in &links {
-			total_links.push(link.to_string());
-		}
-		println!("{:?}", links.len());
-		println!("{:?}", how_much_left);
-		how_much_left = if how_much_left > links.len() {how_much_left - links.len()} else {0};
-		if how_much_left == 0 {break};
-	}
-	// MessengerDispatcher::post(Post {
-	// 	target: "olx".to_owned(),
-	// 	links: total_links
-	// });
-	Ok(total_links)
-}
-
-pub async fn get_page_stats (query: &str) -> Result<PageStats, Box<dyn Error>> {	
-	let chat_id = match env::var(CHAT_ID_ENV)  {
-		Ok(id) => id,
-		Err(err) => panic!("{}", err)
-	};
-	let envbot: Bot = Bot::from_env();
-	envbot.send_message(chat_id.clone(), "Coletando os dados.").await?;
-
-	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
-	let page = context.new_page().await?;
-	let url = constants::OLX_SEARCH_URL.to_owned()+query;
-	page
-		.goto_builder(&url)
-		.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
-		.goto().await?;
-
+	println!("Getting page stats");
 	let page_stats = get_number_of_pages(&page).await?;
+	println!("{:?}", page_stats);
+	page.close(Some(false)).await?;
 
-	
-	Ok(page_stats)
+	let mut total_links: Vec<String> = get_posts_from_current_page(&url).await?;
+
+	for i in 1..page_stats.pages_count {
+		let url = [&url, "&o=", &(i+1).to_string()].join("");
+		let links = get_posts_from_current_page(&url).await?;
+		total_links = [&total_links[..], &links[..]].concat();
+	}
+	println!("Total links: {:?}", total_links.len());
+	Ok(total_links)
 }

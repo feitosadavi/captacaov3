@@ -19,42 +19,10 @@ impl MessengerService {
 			link: self.link.to_owned()
 		})
 	}
-
-	async fn click_send_btn(&self, page: Page) -> Result<(), Box<dyn Error>>{
-		println!("[olx/message_sender_service]: Clicking Send Button");
-		page.press_builder("#input-text-message", "Enter").delay(0.0).timeout(300.0).no_wait_after(false).press().await?;
-		// page.keyboard().press("Enter").unwrap();
-		// let selector_builder = page
-		// 	.wait_for_selector_builder("div[aria-label='Enviar mensagem']")
-		// 	.timeout(9000.0);
-		// match selector_builder.wait_for_selector().await {
-		// 	Ok(send_btn) => {
-		// 		println!("{:?}", send_btn);
-		// 		// send_btn.unwrap().click_builder().click().await?
-		// 	},
-		// 	Err(_) => self.log_error("Send Button Not Found"),		
-		// };
-	
-		Ok(())
-	}
-
-	async fn has_sent_previous_messages (&self, page: Page) -> Result<bool, Box<dyn Error>> {
-		println!("[olx/message_sender_service]: Checking if previous messages was sent");
-		let selector_builder = page.wait_for_selector_builder("div[type='Alone']")
-			.timeout(9000.0);
-		
-		let has_sent = match selector_builder.wait_for_selector().await  {
-			Ok(_) => true,
-			Err(_) => false,
-		};
-		let msg = if has_sent {"Has Sent Previous Messages"} else {"Has Not Sent Previous Messages"};
-		eprintln!("{}", msg);
-	
-		Ok(has_sent)
-	}
 	
 	async fn type_message (&self, page: Page) -> Result<(), Box<dyn Error>> {
 		println!("[olx/message_sender_service]: Typing message");
+		thread::sleep(Duration::from_secs(10));
 		let selector_builder = page
 			.wait_for_selector_builder("textarea[placeholder='Digite uma mensagem...']")
 			.timeout(9000.0);
@@ -78,7 +46,7 @@ impl MessengerService {
 	
 	async fn click_chat_btn (&self, page: Page) -> Result<(), Box<dyn Error>> {
 		println!("[olx/message_sender_service]: Clicking Chat Button");
-		thread::sleep(Duration::from_secs(3));
+		thread::sleep(Duration::from_secs(10));
 		match page.wait_for_selector_builder("[data-element='button_reply-chat']").timeout(3000.0).wait_for_selector().await {
 			Ok(chat_btns) => {
 				match chat_btns {
@@ -96,18 +64,7 @@ impl MessengerService {
 		Ok(())
 	}
 	
-	async fn click_cookies_button(&self, page: Page) -> Result<(), Box<dyn Error>> {
-		println!("[olx/message_sender_service]: Clicking Cookies Button");	
-		match page.query_selector("#cookie-notice-ok-button").await {
-			Ok(button) => {
-				button.unwrap().click_builder().click().await?;
-			},
-			Err(_) => self.log_error("Cookies Button Not Found"),
-		}
-		Ok(())
-	}
-	
-	pub async fn start(&mut self, links: Vec<String>) -> Result<(), Box<dyn Error>>{
+	pub async fn start(&mut self, links: Vec<String>) -> Result<i32, Box<dyn Error>>{
 		println!("[olx/message_sender_service]: Start Sending Messages");
 		
 		let (context, browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
@@ -154,13 +111,13 @@ impl MessengerService {
 			i += 1;
 		}
 
-		let chat_id = match env::var(CHAT_ID_ENV)  {
-			Ok(id) => id,
-			Err(err) => panic!("{}", err)
-		};
-		let envbot: Bot = Bot::from_env();
-		envbot.send_message(chat_id.clone(), format!("Enviado para {} anúncios", i)).await?;
-		Ok(())
+		// let chat_id = match env::var(CHAT_ID_ENV)  {
+		// 	Ok(id) => id,
+		// 	Err(err) => panic!("{}", err)
+		// };
+		// let envbot: Bot = Bot::from_env();
+		// envbot.send_message(chat_id.clone(), format!("Enviado para {} anúncios", i)).await?;
+		Ok(i)
 	}
 	
 }

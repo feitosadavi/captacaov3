@@ -109,7 +109,7 @@ async fn main() {
 
 	// EVENT_EMITTER.lock().unwrap().emit("SEND_MSG", Post {links: 
 		// ["https://df.olx.com.br/distrito-federal-e-regiao/autos-e-pecas/carros-vans-e-utilitarios/tesla-model-s-plaid-eletrico-1246870935?lis=listing_no_category".to_string()].to_vec(), target: "olx".to_string()});
-
+		env::set_var("RUST_BACKTRACE", "full");
 	std::env::set_var("TELOXIDE_TOKEN", "6511336966:AAFPx-_Uvzy4WxFfaCgk4ZNmdywdY7rXYKg");
 	let bot = Bot::from_env();
 	Command::repl(bot, answer).await;
@@ -129,8 +129,6 @@ enum Command {
     Login,
     #[command(description = "Envia a mensagem para os anunciantes.")]
     EnviarMensagem(String),
-		#[command(description = "A quantidade de anúncios que quer alcançar.")]
-    Qtd(String)
 }
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -142,41 +140,20 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 			bot.send_message(msg.chat.id, "Login realizado com sucesso!.").await?
 		}
 		Command::EnviarMensagem(_search) => {
-			env::set_var(CHAT_ID_ENV, msg.chat.id.to_string());
-			
-			let stats = match posts_getter_service::get_page_stats(&_search).await {
-				Ok(stats) => stats,
+			// env::set_var(CHAT_ID_ENV, msg.chat.id.to_string());
+			bot.send_message(msg.chat.id, "Coletando os dados.").await?;
+			let links = match posts_getter_service::get_posts_links(&_search).await {
+				Ok(links) => links,
 				Err(_err) => panic!("")
 			};
-			println!("Stats: {:?}", stats);
-
-			env::set_var("SEARCH", &_search);
-			env::set_var("PAGES_COUNT", stats.pages_count.to_string());
-			env::set_var("POSTS_COUNT", stats.posts_count.to_string());
-
-			bot.send_message(msg.chat.id, 
-				format!("Encontrei {} anúncios, para quantos você deseja enviar? (informe com o comando /qtd)", stats.posts_count)).await?
-		}
-		Command::Qtd(_qtd) => {
-			let sent_qtd: i32 = _qtd.parse().unwrap();
-			let pages_count = env::var("PAGES_COUNT").unwrap().parse().unwrap();
-			let posts_count: i32 = env::var("POSTS_COUNT").unwrap().parse().unwrap();
-			let search = env::var("SEARCH").unwrap();
-			println!("Sent qtd: {:?}", sent_qtd);
-			println!("pages_count: {:?}", pages_count);
-			println!("posts_count: {:?}", posts_count);
-			if sent_qtd > posts_count {
-				bot.send_message(msg.chat.id, "O número de posts a enviar deve ser menor que o total de posts encontrados.").await?;
-			} else {
-				bot.send_message(msg.chat.id, "Ok!").await?;
-				let links = match posts_getter_service::get_posts_links(&search, pages_count, sent_qtd.try_into().unwrap()).await {
-					Ok(links) => links,
-					Err(_err) => panic!("")
-				};
-				let mut message_sender = olx::message_sender_service::MessengerService { link: "".to_string() };
-				message_sender.start(links).await.unwrap();
-			}
-			bot.send_message(msg.chat.id, "Ok!").await?
+			println!("Terminou");
+			// let mut message_sender = olx::message_sender_service::MessengerService { link: "".to_string() };
+			// let res= match message_sender.start(links).await {
+			// 	Ok(r) => r,
+			// 	Err(e) => panic!("Erro ao enviar as mensagens")
+			// };
+			bot.send_message(msg.chat.id, format!("Processo finalizado, 1 enviados")).await?
+			// bot.send_message(msg.chat.id, format!("Processo finalizado, {} enviados", res)).await?
 		}
 	};
 

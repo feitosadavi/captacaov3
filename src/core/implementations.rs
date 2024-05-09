@@ -21,7 +21,7 @@ impl TargetMethod {
 	// 	}
 	// }
 
-	pub async fn send_message(&self, links: Vec<String>) -> Result<(), Box<dyn Error>> {
+	pub async fn send_message(&self, links: Vec<String>) -> Result<i32, Box<dyn Error>> {
 		match self.name {
 			"olx" => {
 				let mut message_sender = olx::message_sender_service::MessengerService { link: "".to_string() };
