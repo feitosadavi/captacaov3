@@ -70,7 +70,7 @@ impl MessengerService {
 	pub async fn start(&mut self, links: Vec<String>) -> Result<i32, Box<dyn Error>>{
 		println!("[olx/message_sender_service]: Start Sending Messages");
 		
-		let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
+		let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, true).await?;
 
 		context.add_init_script("disable_css_and_image.js").await?;
 

@@ -66,7 +66,7 @@ async fn click_grade_view(page: &Page) -> Result<Option<()>, Box<dyn std::error:
 }
 
 async fn get_posts_from_current_page(url: &str) -> Result<Vec<String>, Box<dyn Error>>  {
-	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
+	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, true).await?;
 	let page = context.new_page().await?;
 	page.goto_builder(&url).goto().await?;
 
@@ -92,7 +92,7 @@ async fn get_posts_from_current_page(url: &str) -> Result<Vec<String>, Box<dyn E
 pub async fn get_posts_links(query: &str) -> Result<Vec<String>, Box<dyn Error>> {
 	let url = OLX_SEARCH_URL.to_owned()+query;
 
-	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox).await?;
+	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, true).await?;
 	let page = context.new_page().await?;
 	page
 		.goto_builder(&url)

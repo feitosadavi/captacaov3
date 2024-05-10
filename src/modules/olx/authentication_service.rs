@@ -16,7 +16,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 		link: "".to_string()
 	});
 	
-	let (context, _browser, _playwright) = Context::new(BrowserName::Firefox).await?;
+	let (context, _browser, _playwright) = Context::new(BrowserName::Firefox, false).await?;
 
 	let page = context.new_page().await?;
 

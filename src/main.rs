@@ -156,7 +156,9 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 		},
 		Command::Logout => {
 			let mut file = File::create("message.txt")?;
-    	file.write_all({}.as_bytes())?;
+    	file.write_all("{}".as_bytes())?;
+			bot.send_message(msg.chat.id, "Logout realizado!").await?
+	
 		}
 	};
 
