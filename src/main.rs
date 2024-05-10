@@ -7,12 +7,13 @@ pub mod core;
 pub mod global_event_emitter;
 pub mod constants;
 
-use std::env;
+use std::{env, fs::File, io::Write};
 
 use constants::CHAT_ID_ENV;
 use global_event_emitter::EVENT_EMITTER;
 use modules::olx::posts_getter_service;
 use tokio::runtime::Runtime;
+use util::restart::restart_program;
 
 use self::core::{
 	structs::{TargetMethod, Log, Post},
@@ -122,7 +123,13 @@ enum Command {
     #[command(description = "realiza o login na Olx.")]
     Login,
     #[command(description = "Envia a mensagem para os anunciantes.")]
+    MudarMensagem(String),
+		#[command(description = "Muda a mensagem que será enviada")]
     EnviarMensagem(String),
+		#[command(description = "Para o processo em andamento")]
+    Parar,
+		#[command(description = "Sai da conta que está logada")]
+    Logout,
 }
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -139,6 +146,17 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 			let _ = posts_getter_service::get_posts_links(&_search).await;
 			println!("Terminou");
 			bot.send_message(msg.chat.id, format!("Acompanhe o envio das mensagens em https://conta.olx.com.br/chats")).await?
+		},
+		Command::Parar => restart_program(),
+		Command::MudarMensagem(message) => {
+    	let mut file = File::create("message.txt")?;
+    	file.write_all(message.as_bytes())?;
+			env::set_var("MESSAGE", message);
+			bot.send_message(msg.chat.id, "Mensagem alterada com sucesso!").await?
+		},
+		Command::Logout => {
+			let mut file = File::create("message.txt")?;
+    	file.write_all({}.as_bytes())?;
 		}
 	};
 

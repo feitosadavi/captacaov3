@@ -1,4 +1,4 @@
-use std::{error::Error, thread, time::Duration};
+use std::{env, error::Error, thread, time::Duration};
 
 use playwright::api::Page;
 
@@ -31,8 +31,12 @@ impl MessengerService {
 				println!("{:?}", textarea);
 				match textarea {
 					Some(element) => {
-						element.type_builder("TEXTO").r#type().await?;
-						// element.press_builder("Enter").press().await?;
+						let message = match env::var("MESSAGE")  {
+							Ok(id) => id,
+							Err(err) => panic!("{}", err)
+						};
+						element.type_builder(message.as_str()).r#type().await?;
+						element.press_builder("Enter").press().await?;
 					}
 					None => self.log_error("Textarea Not Found")
 				}
