@@ -24,7 +24,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 		.goto_builder(OLX_AUTH_PATH)
 		.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
 		.goto().await?;
-	
+	println!("Page Auth");
 	thread::sleep(time::Duration::from_secs(300));
 
 	context::Context::save_storage_state(context).await;

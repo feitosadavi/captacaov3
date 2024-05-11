@@ -7,11 +7,11 @@ pub mod core;
 pub mod global_event_emitter;
 pub mod constants;
 
-use std::{env, fs::File, io::Write};
+use std::{env, fs::{self, File}, io::Write};
 
 use constants::CHAT_ID_ENV;
 use global_event_emitter::EVENT_EMITTER;
-use modules::olx::posts_getter_service;
+use modules::olx::{self, posts_getter_service};
 use tokio::runtime::Runtime;
 use util::restart::restart_program;
 
@@ -19,10 +19,10 @@ use self::core::{
 	structs::{TargetMethod, Log, Post},
 	events::{LOG, POST},
 	targets::TARGETS,
-	implementations::MessengerDispatcher,
-	situtations::{ERROR, SUCCESS}
+	// implementations::MessengerDispatcher,
+	situtations::{SUCCESS}
 };
-use self::util::asyncthread;
+// use self::util::asyncthread;
 
 // async fn start_posts_getter_bot(query: &str, target: &str) {
 // 	let target_clone = target.to_owned();
@@ -50,26 +50,26 @@ async fn start_messenger_bot(links: Vec<String>, target: &str) {
 	// }).join().expect("Error on start bot");
 }
 
-async fn start_authentication(target: &str) {
-	let target_clone = target.to_owned();
+// async fn start_authentication(target: &str) {
+// 	let target_clone = target.to_owned();
  
-	asyncthread::spawn_async(async move {
-		let res = TARGETS.get(&target_clone.as_str())
-			.unwrap()
-			.authenticate()
-			.await;
+// 	asyncthread::spawn_async(async move {
+// 		let res = TARGETS.get(&target_clone.as_str())
+// 			.unwrap()
+// 			.authenticate()
+// 			.await;
 
-		match res {
-			Err(_) => MessengerDispatcher::log(Log { 
-				target: target_clone.to_string(), 
-				situation: ERROR.to_string(), 
-				description: "Já está autenticado".to_string(),
-    		link: "".to_string(), 
-			}),
-    	Ok(_) => println!("OK"),
-		}
-	}).join().expect("Error on start authentication");
-}
+// 		match res {
+// 			Err(_) => MessengerDispatcher::log(Log { 
+// 				target: target_clone.to_string(), 
+// 				situation: ERROR.to_string(), 
+// 				description: "Já está autenticado".to_string(),
+//     		link: "".to_string(), 
+// 			}),
+//     	Ok(_) => println!("OK"),
+// 		}
+// 	}).join().expect("Error on start authentication");
+// }
 
 #[tokio::main]
 async fn main() {
@@ -98,13 +98,18 @@ async fn main() {
 		});
 	});
 
-	EVENT_EMITTER.lock().unwrap().emit(LOG, Log {
-		situation: SUCCESS.to_string(), 
-		target: "olx".to_string(), 
-		description: "".to_string(),
-		link: "MICROSOFT.COM".to_string()
-	});
-		env::set_var("RUST_BACKTRACE", "full");
+	    // Read the contents of the text file
+			let file_content = match fs::read_to_string("message.txt") {
+        Ok(content) => content,
+        Err(err) => {
+            eprintln!("Error reading file: {}", err);
+            return;
+        }
+    };
+
+	// Set the environment variable
+	env::set_var("MESSAGE", &file_content);
+		// env::set_var("RUST_BACKTRACE", "full");
 	std::env::set_var("TELOXIDE_TOKEN", "6511336966:AAFPx-_Uvzy4WxFfaCgk4ZNmdywdY7rXYKg");
 	let bot = Bot::from_env();
 	Command::repl(bot, answer).await;
@@ -137,7 +142,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 		Command::Ajuda => bot.send_message(msg.chat.id, Command::descriptions().to_string()).await?,
 		Command::Login => {
 			bot.send_message(msg.chat.id, "Prossiga com o Login no navegador que apareceu na tela do seu computador.").await?;
-			start_authentication("olx").await;	
+			let _ = olx::authentication_service::start().await;	
 			bot.send_message(msg.chat.id, "Login realizado com sucesso!.").await?
 		}
 		Command::EnviarMensagem(_search) => {
@@ -155,7 +160,7 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 			bot.send_message(msg.chat.id, "Mensagem alterada com sucesso!").await?
 		},
 		Command::Logout => {
-			let mut file = File::create("message.txt")?;
+			let mut file = File::create("storage-state.json")?;
     	file.write_all("{}".as_bytes())?;
 			bot.send_message(msg.chat.id, "Logout realizado!").await?
 	
