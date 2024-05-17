@@ -7,7 +7,7 @@ pub mod core;
 pub mod global_event_emitter;
 pub mod constants;
 
-use std::{env, fs::{self, File}, io::Write};
+use std::{env, fmt::format, fs::{self, File}, io::Write};
 
 use constants::CHAT_ID_ENV;
 use global_event_emitter::EVENT_EMITTER;
@@ -73,13 +73,13 @@ async fn start_messenger_bot(links: Vec<String>, target: &str) {
 
 #[tokio::main]
 async fn main() {
-	println!("THREAD POST");
-	EVENT_EMITTER.lock().unwrap().on(POST, move |post: Post| {
-		println!("{:?}", post);
-		Runtime::new().unwrap().block_on(async move {
-			start_messenger_bot(post.links, post.target.as_str()).await;
-		});
-	});
+	// println!("THREAD POST");
+	// EVENT_EMITTER.lock().unwrap().on(POST, move |post: Post| {
+	// 	println!("{:?}", post);
+	// 	Runtime::new().unwrap().block_on(async move {
+	// 		start_messenger_bot(post.links, post.target.as_str()).await;
+	// 	});
+	// });
 	println!("THREAD LOG");
   EVENT_EMITTER.lock().unwrap().on(LOG, move |log: Log| {
 		println!("{:?}", log);
@@ -93,6 +93,14 @@ async fn main() {
 					let envbot: Bot = Bot::from_env();
 					let _  = envbot.send_message(chat_id.clone(), log.link).await;
 				},
+				"error" => {
+					let chat_id = match env::var(CHAT_ID_ENV)  {
+						Ok(id) => id,
+						Err(err) => panic!("{}", err)
+					};
+					let envbot: Bot = Bot::from_env();
+					let _  = envbot.send_message(chat_id.clone(), format!("Erro ao enviar para: {} ", log.link)).await;
+				}
 				_ => println!(""),
 			}		
 		});
@@ -148,9 +156,11 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
 		Command::EnviarMensagem(_search) => {
 			env::set_var(CHAT_ID_ENV, msg.chat.id.to_string());
 			bot.send_message(msg.chat.id, "Coletando os dados.").await?;
-			let _ = posts_getter_service::get_posts_links(&_search).await;
-			println!("Terminou");
-			bot.send_message(msg.chat.id, format!("Acompanhe o envio das mensagens em https://conta.olx.com.br/chats")).await?
+			let links = posts_getter_service::get_posts_links(&_search).await.expect("Erro ao procurar anúncios");
+			bot.send_message(msg.chat.id, format!("Acompanhe o envio das mensagens em https://conta.olx.com.br/chats")).await?;
+			let mut message_sender = olx::message_sender_service::MessengerService { link: "".to_string() };
+			let _ =message_sender.start(links).await;
+			bot.send_message(msg.chat.id, "Processo concluído!").await?
 		},
 		Command::Parar => restart_program(),
 		Command::MudarMensagem(message) => {

@@ -21,10 +21,10 @@ impl MessengerService {
 	
 	async fn type_message (&self, page: Page) -> Result<(), Box<dyn Error>> {
 		println!("[olx/message_sender_service]: Typing message");
-		thread::sleep(Duration::from_secs(10));
+		thread::sleep(Duration::from_secs(5));
 		let selector_builder = page
 			.wait_for_selector_builder("textarea[placeholder='Digite uma mensagem...']")
-			.timeout(9000.0);
+			.timeout(10000.0);
 		
 		match selector_builder.wait_for_selector().await  {
 			Ok(textarea) => {
@@ -50,7 +50,7 @@ impl MessengerService {
 	async fn click_chat_btn (&self, page: Page) -> Result<(), Box<dyn Error>> {
 		println!("[olx/message_sender_service]: Clicking Chat Button");
 		thread::sleep(Duration::from_secs(10));
-		match page.wait_for_selector_builder("[data-element='button_reply-chat']").timeout(3000.0).wait_for_selector().await {
+		match page.wait_for_selector_builder("[data-element='button_reply-chat']").timeout(10000.0).wait_for_selector().await {
 			Ok(chat_btns) => {
 				match chat_btns {
 					Some(btn) => {

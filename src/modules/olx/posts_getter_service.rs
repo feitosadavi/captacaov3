@@ -29,7 +29,7 @@ async fn scroll_to_bottom_smoothly(page: &Page) -> Result<(), Box<dyn std::error
 			page.eval("window.scrollBy(0, 3000)").await?;
 
 			// Wait for a moment to let the content load and the scroll to take effect
-			thread::sleep(Duration::from_millis(200));
+			thread::sleep(Duration::from_millis(1));
 			// Check if we've reached the bottom of the page
 			let is_bottom: bool = page.eval::<bool>(r#"
 					() => {
@@ -48,29 +48,31 @@ async fn scroll_to_bottom_smoothly(page: &Page) -> Result<(), Box<dyn std::error
 }
 
 
-async fn click_grade_view(page: &Page) -> Result<Option<()>, Box<dyn std::error::Error>> {
-	// Encontre o elemento com o atributo aria-label igual a "Ativar visualização em grade"
-	let selector = "[aria-label=\"Ativar visualização em grade\"]";
-	let element = page.query_selector(selector).await?;
+// async fn click_grade_view(page: &Page) -> Result<Option<()>, Box<dyn std::error::Error>> {
+// 	// Encontre o elemento com o atributo aria-label igual a "Ativar visualização em grade"
+// 	let selector = "[aria-label=\"Ativar visualização em grade\"]";
+// 	let element = page.query_selector(selector).await?;
 	
-	match element {
-			Some(element) => {
-					element.click_builder().click().await?;
-					Ok(Some(()))
-			}
-			None => {
-					println!("Visualização em grade não encontrada.");
-					Ok(None)
-			}
-	}
-}
+// 	match element {
+// 			Some(element) => {
+// 					element.click_builder().click().await?;
+// 					Ok(Some(()))
+// 			}
+// 			None => {
+// 					println!("Visualização em grade não encontrada.");
+// 					Ok(None)
+// 			}
+// 	}
+// }
 
 async fn get_posts_from_current_page(url: &str) -> Result<Vec<String>, Box<dyn Error>>  {
-	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, true).await?;
+	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, false).await?;
 	let page = context.new_page().await?;
-	page.goto_builder(&url).goto().await?;
+	page
+	.goto_builder(&url)
+	.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
+	.goto().await?;
 
-	click_grade_view(&page).await?;
 	scroll_to_bottom_smoothly(&page).await?;
 
 	let anchor_elements = page.query_selector_all("section.olx-ad-card.olx-ad-card--vertical:not(.rec-gallery-adcard)>a").await?;
@@ -92,7 +94,7 @@ async fn get_posts_from_current_page(url: &str) -> Result<Vec<String>, Box<dyn E
 pub async fn get_posts_links(query: &str) -> Result<Vec<String>, Box<dyn Error>> {
 	let url = OLX_SEARCH_URL.to_owned()+query;
 
-	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, true).await?;
+	let (context, _browser, _playwright) = context::Context::new(BrowserName::Firefox, false).await?;
 	let page = context.new_page().await?;
 	page
 		.goto_builder(&url)
@@ -111,6 +113,25 @@ pub async fn get_posts_links(query: &str) -> Result<Vec<String>, Box<dyn Error>>
 		link: format!("Iniciando envio para {} anúncios. Acompanhe o resultado no chat da olx", page_stats.posts_count)
 	});
 
+
+	let duration = (page_stats.pages_count*5)+(page_stats.posts_count*25);
+	let tempo_estimado = if duration <= 60 {
+		duration.to_string()
+	} else {
+		let seconds = duration % 60;
+		let minutes = (duration / 60) % 60;
+		let hours = (duration / 60) / 60;
+		format!("{:0>2}:{:0>2}:{:0>2}", hours, minutes, seconds)
+	};
+
+
+	MessengerDispatcher::log(Log {
+		situation: SUCCESS.to_string(), 
+		target: "olx".to_string(), 
+		description: "".to_string(),
+		link: format!("Tempo estimado: {:?}",tempo_estimado )
+	});
+
 	let mut total_links: Vec<String> = get_posts_from_current_page(&url).await?;
 	MessengerDispatcher::post(Post {
 		links: total_links.clone(),
@@ -120,6 +141,12 @@ pub async fn get_posts_links(query: &str) -> Result<Vec<String>, Box<dyn Error>>
 		let url = [&url, "&o=", &(i+1).to_string()].join("");
 		let links = get_posts_from_current_page(&url).await?;
 		total_links = [&total_links[..], &links[..]].concat();
+		MessengerDispatcher::log(Log {
+			situation: SUCCESS.to_string(), 
+			target: "olx".to_string(), 
+			description: "".to_string(),
+			link: format!("Coletando dados: página {} de {}", i,page_stats.pages_count)
+		});
 		MessengerDispatcher::post(Post {
 			links,
 			target: "olx".to_string()

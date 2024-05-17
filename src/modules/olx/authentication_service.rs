@@ -25,7 +25,13 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
 		.wait_until(playwright::api::DocumentLoadState::DomContentLoaded)
 		.goto().await?;
 	println!("Page Auth");
-	thread::sleep(time::Duration::from_secs(300));
+	let mut i = 0;
+	loop {
+		thread::sleep(time::Duration::from_secs(1));
+		i += 1;
+		println!("{:?}", i);
+		if i == 60 {break};
+	}
 
 	context::Context::save_storage_state(context).await;
 

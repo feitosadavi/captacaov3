@@ -32,19 +32,19 @@ impl Context {
 	fn get_browser_name(browser_name: BrowserName, playwright: &Playwright) -> BrowserType {
 		match browser_name {
 			BrowserName::Chrome => playwright.chromium(),
-			BrowserName::Firefox => playwright.firefox()
+			BrowserName::Firefox => playwright.chromium()
 		}
 	}
 
 	// #[tokio::main]
-	pub async fn new(browser_name: BrowserName, headless: bool) -> Result<(BrowserContext, Browser, Playwright), Box<dyn Error>> {
+	pub async fn new(browser_name: BrowserName, _headless: bool) -> Result<(BrowserContext, Browser, Playwright), Box<dyn Error>> {
 		println!("Criando contexto..");
 		let playwright = Playwright::initialize().await?;
 		playwright.prepare()?; // Install browsers
 
 		let browser_name = Self::get_browser_name(browser_name, &playwright);
 
-		let browser = browser_name.launcher().headless(headless).launch().await?;
+		let browser = browser_name.launcher().headless(false).launch().await?;
 
 		let storage_state = Self::load_storage_state();
 		let context = browser.context_builder().viewport(Some(Viewport {width: 1400, height: 600})).storage_state(storage_state).build().await?;
