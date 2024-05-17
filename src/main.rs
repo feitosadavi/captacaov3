@@ -7,7 +7,7 @@ pub mod core;
 pub mod global_event_emitter;
 pub mod constants;
 
-use std::{env, fmt::format, fs::{self, File}, io::Write};
+use std::{env, fs::{self, File}, io::Write};
 
 use constants::CHAT_ID_ENV;
 use global_event_emitter::EVENT_EMITTER;
@@ -16,9 +16,9 @@ use tokio::runtime::Runtime;
 use util::restart::restart_program;
 
 use self::core::{
-	structs::{TargetMethod, Log, Post},
-	events::{LOG, POST},
-	targets::TARGETS,
+	structs::{TargetMethod, Log},
+	events::LOG,
+	// targets::TARGETS,
 	// implementations::MessengerDispatcher,
 	// situtations::{SUCCESS}
 };
@@ -37,18 +37,18 @@ use self::core::{
 // 	}).join().expect("Error on start bot");
 // }
 
-async fn start_messenger_bot(links: Vec<String>, target: &str) {
-	let target_clone = target.to_owned();
-	let links_clone = links.to_owned();
+// async fn start_messenger_bot(links: Vec<String>, target: &str) {
+// 	let target_clone = target.to_owned();
+// 	let links_clone = links.to_owned();
 
-	// asyncthread::spawn_async(async move {
-		TARGETS.get(&target_clone.as_str())
-			.unwrap()
-			.send_message(links_clone)
-			.await
-			.expect("App Error");
-	// }).join().expect("Error on start bot");
-}
+// 	// asyncthread::spawn_async(async move {
+// 		TARGETS.get(&target_clone.as_str())
+// 			.unwrap()
+// 			.send_message(links_clone)
+// 			.await
+// 			.expect("App Error");
+// 	// }).join().expect("Error on start bot");
+// }
 
 // async fn start_authentication(target: &str) {
 // 	let target_clone = target.to_owned();
